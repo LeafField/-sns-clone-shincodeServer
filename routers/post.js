@@ -1,19 +1,13 @@
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+const router = require("express").Router();
+const { PrismaClient } = require("@prisma/client");
+const isAuthenticated = require("../middlewares/isAuthenticated");
 
-const router = Router();
 const prisma = new PrismaClient();
 
 // つぶやき投稿用
-type RegisteBody = {
-  content: string;
-};
 
-router.post("/post", async (req, res) => {
-  console.log("接続されたよ！");
-  const { content } = req.body as RegisteBody;
+router.post("/post", isAuthenticated, async (req, res) => {
+  const { content } = req.body;
 
   if (!content) {
     return res.status(400).json({ message: "投稿内容がありません" });
@@ -23,7 +17,10 @@ router.post("/post", async (req, res) => {
     const newPost = await prisma.post.create({
       data: {
         content,
-        authorId: 1,
+        authorId: req.userId,
+      },
+      include: {
+        author: true,
       },
     });
     return res.status(201).json(newPost);
@@ -33,17 +30,15 @@ router.post("/post", async (req, res) => {
   }
 });
 
-type LoginBody = {
-  email: string;
-  password: string;
-};
-
 // 最新記事取得用
 router.get("/get_latest_post", async (req, res) => {
   try {
     const latestPosts = await prisma.post.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
+      include: {
+        author: true,
+      },
     });
     return res.json(latestPosts);
   } catch (err) {
@@ -52,5 +47,5 @@ router.get("/get_latest_post", async (req, res) => {
   }
 });
 
-// module.exports = router;
-export default router;
+module.exports = router;
+// export default router;

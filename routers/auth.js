@@ -1,21 +1,15 @@
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+const router = require("express").Router();
+// const PrismaClient = require("@prisma/client");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const router = Router();
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // 新規ユーザー登録API
 
-type RegisteBody = {
-  username: string;
-  email: string;
-  password: string;
-};
-
 router.post("/register", async (req, res) => {
-  const { username, email, password } = req.body as RegisteBody;
+  const { username, email, password } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -29,14 +23,9 @@ router.post("/register", async (req, res) => {
   return res.json({ user });
 });
 
-type LoginBody = {
-  email: string;
-  password: string;
-};
-
 // ログイン
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body as LoginBody;
+  const { email, password } = req.body;
 
   const user = await prisma.user.findUnique({ where: { email } });
 
@@ -61,5 +50,4 @@ router.post("/login", async (req, res) => {
   return res.json({ token });
 });
 
-// module.exports = router;
-export default router;
+module.exports = router;
